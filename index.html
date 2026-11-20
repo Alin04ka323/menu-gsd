@@ -54,6 +54,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .days button{flex:1 0 44px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 6px;font:inherit;font-size:14px;cursor:pointer;position:relative}
 .days button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 .days button.today::after{content:"";position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--sweet)}
+.days button small{display:block;font-size:11px;opacity:.75;font-variant-numeric:tabular-nums}
+.start{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin:-4px 0 12px}
+.start input{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 8px}
 .cook{background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
 .meal{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
 .meal summary{list-style:none;display:flex;gap:12px;padding:12px 14px;cursor:pointer}
@@ -150,6 +153,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 
   <section class="view on" id="v-menu">
     <div class="days" id="days"></div>
+    <label class="start" for="startDate">Первый день меню <input type="date" id="startDate"></label>
     <div id="day"></div>
     <div class="note">Нажмите на блюдо, чтобы открыть рецепт.<br>🍰 сладкое: лучше днём и после белковой еды.<br>🥔 блюдо с картофелем: 2–3 небольшие картофелины на порцию. Если захочется пюре, делайте его пополам с цветной капустой.</div>
   </section>
@@ -288,27 +292,26 @@ const RECIPES={
 };
 
 const SHOP=[
- {id:"w",t:"На всю неделю",d:"можно взять в первый поход",s:[
-  ["Бакалея",["Гречка 900 г","Булгур 500 г","Бурый рис 500 г","Цельнозерновой хлеб (половину заморозить)","Цельнозерновые хлебцы"]],
-  ["Для десертов",["Миндальная мука 500 г","Эритрит или стевия","Какао без сахара","Горький шоколад 85%, 1 плитка","Разрыхлитель, ванилин"]],
-  ["Орехи и пасты",["Грецкие орехи 200 г","Миндаль 200 г","Семена чиа 200 г","Арахисовая паста без сахара"]],
-  ["Масло и специи",["Масло оливковое или подсолнечное","Масло сливочное, 1 пачка","Корица, паприка, соль, перец","Чеснок, 1 головка"]],
-  ["Заморозка",["Ягоды 1 кг","Шпинат 400 г"]]]},
- {id:"1",t:"Закупка 1 — понедельник",d:"на пн–вт",s:[
-  ["Мясо",["Курица для супа (бедро или голень) 700 г","Филе индейки 1 кг"]],
-  ["Молочное и яйца",["Яйца 2 десятка","Творог 5% 1,2 кг","Греческий йогурт без сахара 2 шт","Кефир 0,5 л","Сметана 15% 300 г","Твёрдый сыр 300 г"]],
-  ["Овощи и фрукты",["Картофель 2,5 кг (на всю неделю)","Морковь 1 кг","Лук 1 кг","Огурцы 1 кг","Белокочанная капуста, 1 небольшой кочан","Болгарский перец 3 шт","Зелень (укроп, петрушка)","Зелёные яблоки 2 шт"]],
-  ["Заморозка",["Брокколи 400 г","Цветная капуста 400 г"]]]},
- {id:"2",t:"Закупка 2 — среда",d:"на ср–чт",s:[
-  ["Мясо и рыба",["Говяжий фарш 700 г","Куриное филе или фарш 400 г","Филе трески 600 г"]],
-  ["Молочное",["Творог 5% 600 г","Греческий йогурт 2 шт","Кефир 0,5 л","Ряженка 0,5 л","Сметана 15% 400 г","Сливки 10–20% 200 мл"]],
-  ["Овощи",["Огурцы 1 кг","Кабачки 2 шт","Авокадо 2 шт","Зелень"]],
-  ["Прочее",["Стручковая фасоль (заморозка) 400 г","Хумус 200 г"]]]},
- {id:"3",t:"Закупка 3 — пятница",d:"на пт–вс",s:[
-  ["Мясо и рыба",["Свиная вырезка 800 г","Куриные бёдра 1,2 кг","Филе сёмги 500 г","Филе хека 500 г"]],
-  ["Молочное и яйца",["Яйца 1 десяток","Творог 5% 600 г","Творог 9% 500 г (для чизкейка)","Сливочный сыр 300 г (для чизкейка)","Греческий йогурт 4 шт","Кефир 0,5 л","Сметана 15% 300 г","Твёрдый сыр 300 г"]],
-  ["Овощи и фрукты",["Шампиньоны 400 г","Огурцы 1 кг","Свежий шпинат 100 г","Болгарский перец 2 шт","Зелень","Зелёные яблоки 2 шт"]],
-  ["Заморозка",["Брокколи 800 г","Цветная капуста 400 г","Стручковая фасоль 400 г"]]]}
+ {id:"meat",t:"Мясо и рыба",freezeFrom:2,s:[["",[
+  "Курица для супа (бедро или голень) 700 г|0","Филе индейки 1 кг|0","Говяжий фарш 700 г|2","Филе трески 600 г|2",
+  "Куриное филе или фарш 400 г|3","Свиная вырезка 800 г|4","Филе сёмги 500 г|4","Куриные бёдра 1,2 кг|5","Филе хека 500 г|6"]]]},
+ {id:"dairy",t:"Молочное и яйца",s:[["",[
+  "Яйца 3 десятка","Творог 5% 2,4 кг","Творог 9% 500 г (для чизкейка)","Сливочный сыр 300 г (для чизкейка)",
+  "Греческий йогурт без сахара 8 шт","Кефир 1,5 л","Ряженка 0,5 л","Сметана 15% 1 кг","Сливки 10–20% 200 мл",
+  "Твёрдый сыр 600 г","Масло сливочное, 1 пачка"]]]},
+ {id:"veg",t:"Овощи и фрукты",s:[["",[
+  "Картофель 2,5 кг","Морковь 1 кг","Лук 1 кг","Огурцы 3 кг","Белокочанная капуста, 1 небольшой кочан","Болгарский перец 5 шт",
+  "Кабачки 2 шт","Авокадо 2 шт","Шампиньоны 400 г","Свежий шпинат 100 г","Зелень (укроп, петрушка), 3 пучка","Чеснок, 1 головка","Зелёные яблоки 4 шт"]]]},
+ {id:"frozen",t:"Заморозка",s:[["",[
+  "Брокколи 1,2 кг","Цветная капуста 800 г","Стручковая фасоль 800 г","Шпинат 400 г","Ягоды 1 кг"]]]},
+ {id:"grain",t:"Крупы и хлеб",s:[["",[
+  "Гречка 900 г","Булгур 500 г","Бурый рис 500 г","Цельнозерновой хлеб (половину заморозить)","Цельнозерновые хлебцы"]]]},
+ {id:"nuts",t:"Орехи, пасты, хумус",s:[["",[
+  "Грецкие орехи 200 г","Миндаль 200 г","Семена чиа 200 г","Арахисовая паста без сахара","Хумус 200 г"]]]},
+ {id:"sweet",t:"Для десертов",s:[["",[
+  "Миндальная мука 500 г","Эритрит или стевия","Какао без сахара","Горький шоколад 85%, 1 плитка","Разрыхлитель, ванилин"]]]},
+ {id:"oil",t:"Масло и специи",s:[["",[
+  "Масло оливковое или подсолнечное","Корица, паприка, соль, перец"]]]}
 ];
 
 const RULES=[
@@ -380,9 +383,9 @@ function shopText(){
     const lines=[];
     g.s.forEach(([sec,items],si)=>{
       const left=items.filter((t,ii)=>!store.got[keyOf(g,si,ii)]);
-      if(left.length){lines.push(sec+":");left.forEach(t=>{lines.push("▫️ "+t);cnt++;});}
+      if(left.length){if(sec)lines.push(sec+":");left.forEach(t=>{lines.push("▫️ "+itemLabel(t));cnt++;});}
     });
-    if(lines.length){out.push("","📦 "+g.t.toUpperCase()+" ("+g.d+")",...lines);}
+    if(lines.length){out.push("","📦 "+g.t.toUpperCase()+(groupNote(g)?"\n("+groupNote(g)+")":""),...lines);}
   });
   out.push("","⚠️ Проверяй состав на горчицу: соусы, майонез, кетчуп, маринады, приправы, хумус, хлеб.");
   return cnt?out.join("\n"):null;
@@ -424,19 +427,39 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
 });
 
 // ---------- menu ----------
-const todayIdx=dayIdx(new Date());
-let cur=todayIdx;
+// Menu day 1 starts on START; the 7-day cycle then repeats.
+const WD_S=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const WD_L=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+const MONTHS=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const DEFAULT_START="2026-11-21";
+let START=lsGet("gsd-start",DEFAULT_START);
+const parseD=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);};
+const midnight=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const diffDays=d=>Math.round((midnight(d)-parseD(START))/864e5);
+function menuDay(date){const n=diffDays(date);return n<0?-1:n%7;}
+function dateOf(i){const n=Math.max(diffDays(new Date()),0);const base=parseD(START);base.setDate(base.getDate()+Math.floor(n/7)*7+i);return base;}
+const fmtLong=d=>`${WD_L[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+let todayIdx=menuDay(new Date());
+let cur=todayIdx<0?0:todayIdx;
 function renderDays(){
-  $("days").innerHTML=DAYS.map((d,i)=>`<button type="button" class="${i===cur?"on":""} ${i===todayIdx?"today":""}" data-i="${i}" aria-label="${d.n}">${d.s}</button>`).join("");
+  $("days").innerHTML=DAYS.map((d,i)=>{const dt=dateOf(i);return `<button type="button" class="${i===cur?"on":""} ${i===todayIdx?"today":""}" data-i="${i}" aria-label="День ${i+1}, ${fmtLong(dt)}">${WD_S[dt.getDay()]}<small>${dt.getDate()}</small></button>`;}).join("");
   document.querySelectorAll("#days button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;renderDays();renderDay();});
+  $("startDate").value=START;
 }
+$("startDate").onchange=()=>{
+  const v=$("startDate").value;if(!v)return;
+  START=v;lsSet("gsd-start",v);todayIdx=menuDay(new Date());cur=todayIdx<0?0:todayIdx;
+  renderDays();renderDay();renderShop();updateForm();toast("Первый день: "+fmtLong(parseD(v)));
+};
 function recipeHtml(key){
   const r=RECIPES[key];if(!r)return"";
   return `<div class="recipe"><div class="ing">Нужно: ${esc(r.i)}</div><ol>${r.s.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`;
 }
 function renderDay(){
   const d=DAYS[cur];
-  $("day").innerHTML=`<div class="cook"><b>${d.n}${cur===todayIdx?" · сегодня":""}</b><br>${esc(d.cook)}</div>`+
+  const dt=dateOf(cur);
+  const mark=cur===todayIdx?" · сегодня":(todayIdx<0&&cur===0?" · начинаем":"");
+  $("day").innerHTML=`<div class="cook"><b>День ${cur+1} · ${fmtLong(dt)}${mark}</b><br>${esc(d.cook)}</div>`+
     d.m.map(([t,txt,sw,pot,left,rk])=>{
       const body=`<div class="t">${t}${sw?" 🍰":""}</div><div class="d">${esc(txt)}${pot?'<span class="tag potato">🥔 картофель</span>':""}${left?'<span class="tag left">остаток</span>':""}${rk?'<span class="more">Рецепт ›</span>':""}</div>`;
       return rk?`<details class="meal ${sw?"sweet":""}"><summary>${body}</summary>${recipeHtml(rk)}</details>`
@@ -447,6 +470,11 @@ function renderDay(){
 // ---------- shopping ----------
 let hideGot=lsGet("gsd-shop-hide",false), openState=lsGet("gsd-shop-open",{});
 const keyOf=(g,si,ii)=>g.id+"-"+si+"-"+ii;
+function itemLabel(t){const m=/^(.*)\|(\d)$/.exec(t);if(!m)return t;return m[1]+" · "+WD_S[dateOf(+m[2]).getDay()].toLowerCase();}
+function groupNote(g){
+  if(g.freezeFrom!=null){const d=dateOf(g.freezeFrom);return `что готовим с ${WD_S[d.getDay()].toLowerCase()}, ${d.getDate()} ${MONTHS[d.getMonth()]}, сразу в морозилку`;}
+  return g.d||"";
+}
 function renderShop(){
   const got=store.got;let n=0,all=0;
   $("shop").innerHTML=SHOP.map(g=>{
@@ -455,13 +483,13 @@ function renderShop(){
       let rows="";
       items.forEach((t,ii)=>{const k=keyOf(g,si,ii);total++;const on=!!got[k];if(on)done++;
         if(hideGot&&on)return;
-        rows+=`<label class="item ${on?"got":""}"><input type="checkbox" id="c-${k}" data-k="${k}" ${on?"checked":""}><span>${esc(t)}</span></label>`;});
-      if(rows)body+=`<div class="sec">${sec}</div>`+rows;
+        rows+=`<label class="item ${on?"got":""}"><input type="checkbox" id="c-${k}" data-k="${k}" ${on?"checked":""}><span>${esc(itemLabel(t))}</span></label>`;});
+      if(rows)body+=(sec?`<div class="sec">${sec}</div>`:"")+rows;
     });
     n+=done;all+=total;
     if(!body)body=`<div class="item" style="cursor:default;color:var(--muted)">Всё куплено ✓</div>`;
     const isOpen=openState[g.id]!==undefined?openState[g.id]:true;
-    return `<details class="group" data-id="${g.id}" ${isOpen?"open":""}><summary><span>${g.t}<br><span class="cnt">${g.d}</span></span><span class="cnt ${done===total?"done":""}">${done}/${total}</span></summary>${body}</details>`;
+    return `<details class="group" data-id="${g.id}" ${isOpen?"open":""}><summary><span>${g.t}${groupNote(g)?`<br><span class="cnt">${groupNote(g)}</span>`:""}</span><span class="cnt ${done===total?"done":""}">${done}/${total}</span></summary>${body}</details>`;
   }).join("");
   $("shop").querySelectorAll("input").forEach(i=>i.onchange=()=>store.setGot(i.dataset.k,i.checked));
   $("shop").querySelectorAll("details").forEach(d=>d.ontoggle=()=>{openState[d.dataset.id]=d.open;lsSet("gsd-shop-open",openState);});
@@ -479,7 +507,8 @@ let gKind="fast",gMeal=null;
 function localInputValue(d){const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;}
 function guessMeal(h){return h<11?"Завтрак":h<16?"Обед":"Ужин";}
 function dishFor(date,meal){
-  const d=DAYS[dayIdx(date)];
+  const idx=menuDay(date);if(idx<0)return null;
+  const d=DAYS[idx];
   const list=d.m.filter(m=>m[0]===meal);
   if(!list.length)return null;
   if(meal!=="Перекус")return {txt:list[0][1],pot:!!list[0][3]};
