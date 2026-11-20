@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f7a57">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Меню ГСД">
+<title>Меню при ГСД</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232f7a57'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow phone column, bottom tab bar, cards only for meals and lists */
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#26302a; --muted:#6f7a72; --line:#e4e2da;
+  --accent:#2f7a57; --accent-ink:#ffffff; --accent-soft:#e3f0e8;
+  --sweet:#b8506f; --sweet-soft:#f8e6ec;
+  --warn:#a8641f; --warn-soft:#f8ecdd;
+  --bad:#b23b3b; --bad-soft:#f8e2e0;
+  --font:"Onest",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#171a18; --card:#212622; --ink:#e8ece8; --muted:#9aa49d; --line:#323934;
+  --accent:#74c49a; --accent-ink:#10251a; --accent-soft:#223a2d;
+  --sweet:#e58aa5; --sweet-soft:#3a2630; --warn:#e0a35f; --warn-soft:#3a2e20;
+  --bad:#f08a80; --bad-soft:#3d2422; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171a18; --card:#212622; --ink:#e8ece8; --muted:#9aa49d; --line:#323934;
+  --accent:#74c49a; --accent-ink:#10251a; --accent-soft:#223a2d;
+  --sweet:#e58aa5; --sweet-soft:#3a2630; --warn:#e0a35f; --warn-soft:#3a2e20;
+  --bad:#f08a80; --bad-soft:#3d2422; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--font)}
+.wrap{max-width:640px;margin:0 auto;padding-block:16px 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px}
+h1{font-size:22px;font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px}
+.sync{font-size:12px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync.on i{background:var(--accent)}
+h2{font-size:15px;font-weight:600;margin:20px 0 8px}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs button{flex:1;max-width:160px;border:0;background:none;padding:9px 2px 11px;font:inherit;font-size:12px;color:var(--muted);cursor:pointer}
+.tabs button .ic{display:block;font-size:20px;line-height:1.25}
+.tabs button.on{color:var(--accent);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.item:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.view{display:none}.view.on{display:block}
+
+.days{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 4px;margin-bottom:12px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.days button{flex:1 0 44px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 6px;font:inherit;font-size:14px;cursor:pointer;position:relative}
+.days button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.days button.today::after{content:"";position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--sweet)}
+.cook{background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.meal{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
+.meal summary{list-style:none;display:flex;gap:12px;padding:12px 14px;cursor:pointer}
+.meal summary::-webkit-details-marker{display:none}
+.meal.norec summary{cursor:default}
+.meal .t{flex:0 0 72px;font-size:13px;color:var(--muted);padding-top:2px}
+.meal .d{flex:1;min-width:0}
+.meal .more{font-size:12px;color:var(--accent);margin-top:4px;display:block}
+.meal[open] .more{display:none}
+.meal.sweet{border-color:var(--sweet);background:var(--sweet-soft)}
+.recipe{padding:0 14px 14px 98px;font-size:14px;color:var(--ink)}
+.recipe ol{margin:6px 0 0;padding-left:18px}
+.recipe li{margin-bottom:4px}
+.recipe .ing{color:var(--muted)}
+@media (max-width:420px){.recipe{padding-left:14px}}
+.tag{display:inline-block;font-size:12px;border-radius:999px;padding:1px 8px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.tag.left{background:var(--line);color:var(--muted)}
+.tag.potato{background:var(--warn-soft);color:var(--warn)}
+.note{border:1px dashed var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted);margin-top:12px}
+
+.progress{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.group{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.group summary{list-style:none;padding:12px 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.group summary::-webkit-details-marker{display:none}
+.cnt{font-weight:400;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cnt.done{color:var(--accent);font-weight:600}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:8px 14px 2px}
+.item{display:flex;gap:10px;align-items:flex-start;padding:9px 14px;border-top:1px solid var(--line);cursor:pointer;user-select:none}
+.item input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent);flex:0 0 auto}
+.item.got span{text-decoration:line-through;color:var(--muted)}
+.row{display:flex;gap:8px;margin-top:4px}
+.btn{flex:1;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px;font:inherit;font-size:14px;cursor:pointer}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.soft{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+
+.form{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.form label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.form input,.form select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%;min-width:0}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.big{font-size:28px!important;font-weight:600;font-variant-numeric:tabular-nums;text-align:center}
+.hint{font-size:13px;color:var(--muted)}
+.dish{font-size:13px;background:var(--bg);border-radius:10px;padding:8px 10px;color:var(--muted)}
+.dish b{color:var(--ink);font-weight:500}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:12px;font-weight:400;color:var(--muted)}
+.day-h{font-size:13px;color:var(--muted);margin:14px 0 6px;text-transform:capitalize}
+.rd{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:6px}
+.rd .tm{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 42px}
+.rd .tx{flex:1;min-width:0;font-size:14px}
+.rd .tx small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.val{font-variant-numeric:tabular-nums;font-weight:600;border-radius:999px;padding:3px 10px;font-size:15px;white-space:nowrap}
+.val.ok{background:var(--accent-soft);color:var(--accent)}
+.val.hi{background:var(--bad-soft);color:var(--bad)}
+.val.lo{background:var(--warn-soft);color:var(--warn)}
+.del{border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 4px;line-height:1}
+.empty{border:1px dashed var(--line);border-radius:14px;padding:16px;color:var(--muted);font-size:14px;text-align:center}
+
+.rules{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.rules ul{margin:0;padding:0;list-style:none}
+.rules li{padding:10px 0;border-bottom:1px solid var(--line)}
+.rules li:last-child{border-bottom:0}
+.rules b{display:block;margin-bottom:2px}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:14px;padding:12px 14px;font-size:14px;margin-top:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
+.modal.on{display:flex}
+.modal>div{background:var(--card);border-radius:16px;padding:18px;max-width:340px;width:100%}
+.modal p{margin:0 0 14px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:8}
+.toast.on{opacity:1}
+.share-box{width:100%;min-height:220px;font:14px/1.4 var(--font);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px;resize:vertical}
+.modal>div.wide{max-width:440px}
+.row.mt{margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Меню при ГСД</h1>
+      <div class="sub">На двоих · готовим сразу на 2 дня</div>
+    </div>
+  </header>
+
+  <section class="view on" id="v-menu">
+    <div class="days" id="days"></div>
+    <div id="day"></div>
+    <div class="note">Нажмите на блюдо, чтобы открыть рецепт.<br>🍰 сладкое: лучше днём и после белковой еды.<br>🥔 блюдо с картофелем: 2–3 небольшие картофелины на порцию. Если захочется пюре, делайте его пополам с цветной капустой.</div>
+  </section>
+
+  <section class="view" id="v-sugar">
+    <div class="stats" id="stats"></div>
+    <h2>Новый замер</h2>
+    <form class="form" id="gForm" autocomplete="off">
+      <div class="seg" id="gKind">
+        <button type="button" data-k="fast" class="on">Натощак</button>
+        <button type="button" data-k="h1">Через 1 ч</button>
+        <button type="button" data-k="h2">Через 2 ч</button>
+      </div>
+      <div class="seg" id="gMeal" hidden>
+        <button type="button" data-m="Завтрак">Завтрак</button>
+        <button type="button" data-m="Обед">Обед</button>
+        <button type="button" data-m="Ужин">Ужин</button>
+        <button type="button" data-m="Перекус">Перекус</button>
+      </div>
+      <div class="dish" id="gDish" hidden></div>
+      <div class="two">
+        <label for="gVal">Сахар, ммоль/л<input id="gVal" class="big" type="number" inputmode="decimal" step="0.1" min="1" max="30" placeholder="5,0" required></label>
+        <label for="gTime">Когда<input id="gTime" type="datetime-local" required></label>
+      </div>
+      <div class="hint" id="gHint">Цель натощак: ниже 5,1</div>
+      <button class="btn pri" type="submit">Сохранить замер</button>
+    </form>
+    <h2>Дневник</h2>
+    <div id="log"></div>
+    <div class="row mt"><button class="btn" id="sendLog" type="button">📤 Отправить дневник</button></div>
+    <div class="alert">Ориентиры общие. Если сахар часто выше цели, покажите дневник эндокринологу.</div>
+  </section>
+
+  <section class="view" id="v-shop">
+    <div class="progress">
+      <div id="ptxt">Куплено 0 из 0</div>
+      <div class="bar"><i id="pbar"></i></div>
+    </div>
+    <button class="btn pri" id="sendShop" type="button" style="width:100%;margin-bottom:12px">📤 Отправить список мужу</button>
+    <div id="shop"></div>
+    <div class="row">
+      <button class="btn" id="hideBtn" type="button">Скрыть купленное</button>
+      <button class="btn" id="resetBtn" type="button">Новая неделя</button>
+    </div>
+    <div class="alert">Для мужа: проверяйте состав на горчицу. Она бывает в соусах, майонезе, кетчупе, маринадах, приправах для мяса и курицы, иногда в хумусе и хлебе.</div>
+  </section>
+
+  <section class="view" id="v-rules">
+    <div class="rules"><ul id="rules"></ul></div>
+    <div class="alert">Это общие правила питания при ГСД. Точные цели по сахару и углеводам назначит эндокринолог.</div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button class="on" data-v="menu" type="button"><span class="ic">🍽️</span>Меню</button>
+  <button data-v="sugar" type="button"><span class="ic">🩸</span>Сахар</button>
+  <button data-v="shop" type="button"><span class="ic">🛒</span>Покупки</button>
+  <button data-v="rules" type="button"><span class="ic">📋</span>Памятка</button>
+</nav>
+
+<div class="modal" id="modal"><div><p id="mText">Снять все галочки и начать список заново?</p><div class="row"><button class="btn" id="mNo" type="button">Отмена</button><button class="btn soft" id="mYes" type="button">Сбросить</button></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="smodal"><div class="wide"><p>Текст скопирован. Вставьте его в чат. Если копирование не сработало, выделите текст ниже вручную.</p><textarea class="share-box" id="sText" readonly></textarea><div class="row"><button class="btn" id="sCopy" type="button">Скопировать ещё раз</button><button class="btn soft" id="sClose" type="button">Готово</button></div></div></div>
+
+<script>
+// ---------- data ----------
+const DAYS=[
+ {s:"Пн",n:"Понедельник",cook:"Готовим: куриный суп, индейку с овощами, творожную запеканку",m:[
+  ["Завтрак","Омлет из 2 яиц со шпинатом и сыром, тост из цельнозернового хлеба, огурец",0,0,0,"omlet"],
+  ["Перекус","Греческий йогурт без сахара и горсть грецких орехов"],
+  ["Обед","Куриный суп с гречкой, картофелем и овощами; салат из капусты с огурцом",0,1,0,"soup"],
+  ["Перекус","Творожная запеканка с ягодами и эритритом",1,0,0,"zap"],
+  ["Ужин","Индейка, запечённая с брокколи, цветной капустой и перцем",0,0,0,"turkey"],
+  ["На ночь","Кефир и цельнозерновой хлебец"]]},
+ {s:"Вт",n:"Вторник",cook:"Сегодня без готовки, едим вчерашнее",m:[
+  ["Завтрак","Сырники на миндальной муке с эритритом, сметана 15%",0,0,0,"syrniki"],
+  ["Перекус","Зелёное яблоко и 30 г сыра"],
+  ["Обед","Куриный суп с гречкой и картофелем",0,1,1,"soup"],
+  ["Перекус","Творожная запеканка",1,0,1,"zap"],
+  ["Ужин","Индейка с овощами",0,0,1,"turkey"],
+  ["На ночь","Творог 5% с корицей"]]},
+ {s:"Ср",n:"Среда",cook:"Готовим: тефтели, булгур, треску",m:[
+  ["Завтрак","2 варёных яйца, тост с авокадо, огурец"],
+  ["Перекус","Шоколадный мусс из творога с какао и эритритом",1,0,0,"mousse"],
+  ["Обед","Говяжьи тефтели в сливочном соусе, булгур, салат из огурцов с зеленью",0,0,0,"meatballs"],
+  ["Перекус","Йогурт и 100 г ягод"],
+  ["Ужин","Треска, запечённая под сметаной и сыром, стручковая фасоль",0,0,0,"cod"],
+  ["На ночь","Ряженка и хлебец"]]},
+ {s:"Чт",n:"Четверг",cook:"Готовим: драники",m:[
+  ["Завтрак","Творог с ягодами и орехами, 1 яйцо"],
+  ["Перекус","Хумус с палочками огурца и моркови"],
+  ["Обед","Тефтели с булгуром",0,0,1,"meatballs"],
+  ["Перекус","20 г горького шоколада 85% и миндаль",1],
+  ["Ужин","Драники из картофеля пополам с кабачком и куриным фаршем (в духовке), сметана, салат",0,1,0,"draniki"],
+  ["На ночь","Кефир"]]},
+ {s:"Пт",n:"Пятница",cook:"Готовим: запечённый омлет, свинину с грибами, чизкейк, сёмгу",m:[
+  ["Завтрак","Запечённый в духовке омлет с брокколи, перцем и сыром, тост",0,0,0,"bakedomlet"],
+  ["Перекус","Йогурт с ложкой семян чиа"],
+  ["Обед","Свиная вырезка с грибами в сметане, жареный картофель с луком, салат из огурцов с зеленью",0,1,0,"pork"],
+  ["Перекус","Чизкейк без сахара",1,0,0,"cheesecake"],
+  ["Ужин","Запечённая сёмга, 3 ст. л. бурого риса, салат из шпината и огурца",0,0,0,"salmon"],
+  ["На ночь","Творог"]]},
+ {s:"Сб",n:"Суббота",cook:"Готовим: курицу с картофелем",m:[
+  ["Завтрак","Запечённый омлет, огурец",0,0,1,"bakedomlet"],
+  ["Перекус","Яблоко и 1 ст. л. арахисовой пасты без сахара"],
+  ["Обед","Свинина с грибами, гречка",0,0,1,"pork"],
+  ["Перекус","Чизкейк",1,0,1,"cheesecake"],
+  ["Ужин","Куриные бёдра, запечённые с картофельными дольками в кожуре, цветной капустой и стручковой фасолью",0,1,0,"chicken"],
+  ["На ночь","Кефир и хлебец"]]},
+ {s:"Вс",n:"Воскресенье",cook:"Готовим: хека",m:[
+  ["Завтрак","Творожные панкейки на миндальной муке с ягодами",1,0,0,"pancakes"],
+  ["Перекус","Овощные палочки и сыр"],
+  ["Обед","Курица с картофелем и овощами",0,1,1,"chicken"],
+  ["Перекус","Чизкейк",1,0,1,"cheesecake"],
+  ["Ужин","Хек под сырной шапкой с брокколи",0,0,0,"hake"],
+  ["На ночь","Йогурт"]]}
+];
+
+const RECIPES={
+ omlet:{i:"2 яйца, горсть шпината, 30 г сыра, тост",s:["Шпинат прогреть на сковороде 1–2 минуты.","Залить взбитыми яйцами, посолить, сверху натереть сыр.","Готовить под крышкой на слабом огне 4–5 минут."]},
+ soup:{i:"курица 700 г, 3 картофелины, морковь, лук, 80 г гречки, зелень",s:["Курицу залить 2,5 л воды, довести до кипения, снять пену, варить 40 минут.","Достать курицу, отделить мясо от костей.","В бульон положить картофель кубиком, тёртую морковь, лук и промытую гречку, варить 20 минут.","Вернуть мясо, посолить, добавить зелень. Хватит на 2 дня на двоих."]},
+ zap:{i:"творог 5% 600 г, 3 яйца, 3 ст. л. миндальной муки, эритрит, ванилин, ягоды",s:["Творог, яйца, муку, эритрит и ванилин смешать блендером.","Вмешать ягоды, выложить в форму.","Запекать 40 минут при 180°. Остудить, потом резать."]},
+ turkey:{i:"филе индейки 1 кг, брокколи, цветная капуста, перец, масло, паприка, чеснок",s:["Индейку нарезать кусками, посолить, посыпать паприкой, сбрызнуть маслом.","Выложить в форму вместе с овощами и чесноком.","Запекать 30–35 минут при 200°."]},
+ syrniki:{i:"творог 400 г, 1 яйцо, 3–4 ст. л. миндальной муки, эритрит",s:["Смешать творог, яйцо, муку и эритрит.","Сформовать сырники, обвалять в миндальной муке.","Жарить на слабом огне под крышкой по 3–4 минуты с каждой стороны."]},
+ mousse:{i:"творог 200 г, 2 ст. л. йогурта, 1 ст. л. какао, эритрит",s:["Всё взбить блендером до гладкости.","Убрать в холодильник на 20 минут."]},
+ meatballs:{i:"говяжий фарш 700 г, лук, 1 яйцо, сливки 200 мл, булгур",s:["Фарш смешать с мелко нарезанным луком, яйцом и солью, скатать шарики.","Обжарить со всех сторон, залить сливками и 100 мл воды, тушить 20 минут.","Булгур залить водой 1:2, варить 15 минут. Порция для жены: 3–4 ст. л."]},
+ cod:{i:"филе трески 600 г, 3 ст. л. сметаны, 60 г сыра, стручковая фасоль",s:["Треску выложить в форму, посолить и поперчить.","Смазать сметаной, посыпать тёртым сыром.","Запекать 20 минут при 190°. Фасоль отварить 5 минут."]},
+ draniki:{i:"4 картофелины, 1 кабачок, куриный фарш 400 г, 1 яйцо, соль",s:["Картофель и кабачок натереть, хорошо отжать.","Смешать с фаршем, яйцом и солью.","Выложить лепёшки на пергамент, запекать 25 минут при 200°, в середине перевернуть.","Подавать со сметаной и салатом."]},
+ bakedomlet:{i:"8 яиц, 3 ст. л. сметаны, брокколи, перец, 80 г сыра",s:["Яйца взбить со сметаной и солью.","В форму выложить брокколи и нарезанный перец, залить яйцами, посыпать сыром.","Запекать 25 минут при 180°. Хватит на 2 завтрака."]},
+ pork:{i:"свиная вырезка 800 г, шампиньоны 400 г, лук, сметана 200 г; картофель",s:["Вырезку нарезать медальонами, обжарить по 2–3 минуты с каждой стороны.","Добавить лук и грибы, жарить до испарения жидкости.","Влить сметану, тушить 15 минут.","Картофель: 2–3 штуки на порцию, жарить с луком на небольшом количестве масла."]},
+ cheesecake:{i:"творог 9% 500 г, сливочный сыр 300 г, 3 яйца, эритрит, ванилин; основа: 100 г миндальной муки, 40 г масла",s:["Миндальную муку смешать с растопленным маслом, утрамбовать в форму.","Творог, сыр, яйца, эритрит и ванилин взбить до гладкости, вылить на основу.","Запекать 50–60 минут при 160°, остудить в выключенной духовке.","Убрать в холодильник на ночь."]},
+ salmon:{i:"филе сёмги 500 г, бурый рис, шпинат, огурец",s:["Сёмгу посолить и поперчить, запекать 15 минут при 200°.","Бурый рис варить 30–35 минут. Порция для жены: 3 ст. л.","Шпинат и огурец заправить оливковым маслом."]},
+ chicken:{i:"куриные бёдра 1,2 кг, картофель, цветная капуста, стручковая фасоль, паприка, чеснок",s:["Бёдра натереть солью, паприкой и чесноком.","Картофель нарезать дольками прямо в кожуре.","Всё выложить на противень с овощами, сбрызнуть маслом.","Запекать 40 минут при 200°."]},
+ hake:{i:"филе хека 500 г, 2 ст. л. сметаны, 60 г сыра, брокколи",s:["Хек посолить, выложить в форму, рядом брокколи.","Смазать рыбу сметаной и посыпать сыром.","Запекать 20–25 минут при 190°."]},
+ pancakes:{i:"творог 250 г, 2 яйца, 3 ст. л. миндальной муки, ½ ч. л. разрыхлителя, эритрит",s:["Всё смешать блендером.","Жарить небольшие панкейки на сухой сковороде с антипригарным покрытием по 2 минуты с каждой стороны.","Подавать с ягодами."]}
+};
+
+const SHOP=[
+ {id:"w",t:"На всю неделю",d:"можно взять в первый поход",s:[
+  ["Бакалея",["Гречка 900 г","Булгур 500 г","Бурый рис 500 г","Цельнозерновой хлеб (половину заморозить)","Цельнозерновые хлебцы"]],
+  ["Для десертов",["Миндальная мука 500 г","Эритрит или стевия","Какао без сахара","Горький шоколад 85%, 1 плитка","Разрыхлитель, ванилин"]],
+  ["Орехи и пасты",["Грецкие орехи 200 г","Миндаль 200 г","Семена чиа 200 г","Арахисовая паста без сахара"]],
+  ["Масло и специи",["Масло оливковое или подсолнечное","Масло сливочное, 1 пачка","Корица, паприка, соль, перец","Чеснок, 1 головка"]],
+  ["Заморозка",["Ягоды 1 кг","Шпинат 400 г"]]]},
+ {id:"1",t:"Закупка 1 — понедельник",d:"на пн–вт",s:[
+  ["Мясо",["Курица для супа (бедро или голень) 700 г","Филе индейки 1 кг"]],
+  ["Молочное и яйца",["Яйца 2 десятка","Творог 5% 1,2 кг","Греческий йогурт без сахара 2 шт","Кефир 0,5 л","Сметана 15% 300 г","Твёрдый сыр 300 г"]],
+  ["Овощи и фрукты",["Картофель 2,5 кг (на всю неделю)","Морковь 1 кг","Лук 1 кг","Огурцы 1 кг","Белокочанная капуста, 1 небольшой кочан","Болгарский перец 3 шт","Зелень (укроп, петрушка)","Зелёные яблоки 2 шт"]],
+  ["Заморозка",["Брокколи 400 г","Цветная капуста 400 г"]]]},
+ {id:"2",t:"Закупка 2 — среда",d:"на ср–чт",s:[
+  ["Мясо и рыба",["Говяжий фарш 700 г","Куриное филе или фарш 400 г","Филе трески 600 г"]],
+  ["Молочное",["Творог 5% 600 г","Греческий йогурт 2 шт","Кефир 0,5 л","Ряженка 0,5 л","Сметана 15% 400 г","Сливки 10–20% 200 мл"]],
+  ["Овощи",["Огурцы 1 кг","Кабачки 2 шт","Авокадо 2 шт","Зелень"]],
+  ["Прочее",["Стручковая фасоль (заморозка) 400 г","Хумус 200 г"]]]},
+ {id:"3",t:"Закупка 3 — пятница",d:"на пт–вс",s:[
+  ["Мясо и рыба",["Свиная вырезка 800 г","Куриные бёдра 1,2 кг","Филе сёмги 500 г","Филе хека 500 г"]],
+  ["Молочное и яйца",["Яйца 1 десяток","Творог 5% 600 г","Творог 9% 500 г (для чизкейка)","Сливочный сыр 300 г (для чизкейка)","Греческий йогурт 4 шт","Кефир 0,5 л","Сметана 15% 300 г","Твёрдый сыр 300 г"]],
+  ["Овощи и фрукты",["Шампиньоны 400 г","Огурцы 1 кг","Свежий шпинат 100 г","Болгарский перец 2 шт","Зелень","Зелёные яблоки 2 шт"]],
+  ["Заморозка",["Брокколи 800 г","Цветная капуста 400 г","Стручковая фасоль 400 г"]]]}
+];
+
+const RULES=[
+ ["Завтраки белковые","Без каш, фруктов и сладкого: утром сахар поднимается легче всего."],
+ ["Сладкое днём","Десерты едим днём и после белковой еды."],
+ ["Крупы небольшими порциями","3–4 ст. л. готовой крупы на порцию. Мужу можно больше и с хлебом."],
+ ["Картофель с умом","2–3 небольшие картофелины, всегда с мясом или рыбой и овощами. Варить или запекать в кожуре. Остывший и разогретый поднимает сахар меньше свежего."],
+ ["Порядок еды","Сначала салат, потом белок, потом гарнир."],
+ ["Прогулка","10–15 минут после еды заметно снижают сахар."],
+ ["Подсластители","Эритрит, стевия, сукралоза: уточнить у эндокринолога. Без сахарина и «диабетических» сладостей на фруктозе."],
+ ["Ориентиры сахара","Натощак ниже 5,1, через час после еды ниже 7,0, через 2 часа ниже 6,7 ммоль/л. Мерить глюкометром и записывать во вкладку «Сахар», особенно после картофельных блюд."]
+];
+
+const KINDS={fast:{n:"Натощак",max:5.1},h1:{n:"Через 1 ч",max:7.0},h2:{n:"Через 2 ч",max:6.7}};
+
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>v.toFixed(1).replace(".",",");
+const dayIdx=d=>(d.getDay()+6)%7;
+function lsGet(k,def){try{const v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+let toastT;function toast(t){const el=$("toast");el.textContent=t;el.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("on"),2000);}
+
+// ---------- store: shared db when available, otherwise this device ----------
+const store={
+  db:null, got:lsGet("gsd-shop-v2",{}), readings:lsGet("gsd-glucose-v1",[]),
+  setGot(k,on){
+    if(on)this.got[k]=1;else delete this.got[k];
+    renderShop();
+    if(this.db){const r=this.db.doc("shop/"+k);(on?r.set({got:true,at:Date.now()}):r.delete()).catch(()=>toast("Не удалось сохранить"));}
+    else lsSet("gsd-shop-v2",this.got);
+  },
+  async resetShop(){
+    const keys=Object.keys(this.got);this.got={};renderShop();
+    if(this.db){for(const k of keys){try{await this.db.doc("shop/"+k).delete();}catch(e){}}}
+    else lsSet("gsd-shop-v2",{});
+  },
+  async addReading(r){
+    if(this.db){try{await this.db.collection("glucose").add(r);}catch(e){toast("Не удалось сохранить");return false;}}
+    else{r.id="l"+Date.now();this.readings.unshift(r);lsSet("gsd-glucose-v1",this.readings);renderSugar();}
+    return true;
+  },
+  async delReading(id){
+    if(this.db){try{await this.db.doc("glucose/"+id).delete();}catch(e){toast("Не удалось удалить");}}
+    else{this.readings=this.readings.filter(r=>r.id!==id);lsSet("gsd-glucose-v1",this.readings);renderSugar();}
+  }
+};
+
+// ---------- share as text ----------
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+  try{const ta=$("sText");ta.value=t;ta.focus();ta.select();return document.execCommand("copy");}catch(e){return false;}
+}
+async function shareText(title,t){
+  if(navigator.share){
+    try{await navigator.share({title,text:t});return;}
+    catch(e){if(e&&e.name==="AbortError")return;}
+  }
+  $("sText").value=t;$("smodal").classList.add("on");
+  await copyText(t);$("sText").select();
+}
+$("sCopy").onclick=async()=>{if(await copyText($("sText").value))toast("Скопировано");};
+$("sClose").onclick=()=>$("smodal").classList.remove("on");
+
+function shopText(){
+  const out=["🛒 Купить:"];let cnt=0;
+  SHOP.forEach(g=>{
+    const lines=[];
+    g.s.forEach(([sec,items],si)=>{
+      const left=items.filter((t,ii)=>!store.got[keyOf(g,si,ii)]);
+      if(left.length){lines.push(sec+":");left.forEach(t=>{lines.push("▫️ "+t);cnt++;});}
+    });
+    if(lines.length){out.push("","📦 "+g.t.toUpperCase()+" ("+g.d+")",...lines);}
+  });
+  out.push("","⚠️ Проверяй состав на горчицу: соусы, майонез, кетчуп, маринады, приправы, хумус, хлеб.");
+  return cnt?out.join("\n"):null;
+}
+$("sendShop").onclick=()=>{
+  const t=shopText();
+  if(!t){toast("Всё уже куплено");return;}
+  shareText("Список покупок",t);
+};
+
+function logText(){
+  const rs=store.readings.slice().sort((a,b)=>a.ts-b.ts).filter(r=>r.ts>=Date.now()-14*864e5);
+  if(!rs.length)return null;
+  const fD=new Intl.DateTimeFormat("ru-RU",{day:"2-digit",month:"2-digit"});
+  const fT=new Intl.DateTimeFormat("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  const out=["Дневник сахара за 14 дней, ммоль/л",""];let last="";
+  rs.forEach(r=>{
+    const d=new Date(r.ts),dk=fD.format(d);
+    if(dk!==last){if(last)out.push("");out.push(dk);last=dk;}
+    const k=KINDS[r.kind]||{n:""};const st=status(r);
+    const lbl=r.kind==="fast"?k.n:`${k.n} после: ${(r.meal||"еды").toLowerCase()}`;
+    out.push(`${fT.format(d)} ${lbl} — ${num(r.value)}${st==="hi"?" ↑":st==="lo"?" ↓":""}${r.dish?" ("+r.dish+")":""}`);
+  });
+  out.push("","↑ выше цели · цели: натощак < 5,1; через 1 ч < 7,0; через 2 ч < 6,7");
+  return out.join("\n");
+}
+$("sendLog").onclick=()=>{
+  const t=logText();
+  if(!t){toast("Пока нет замеров за 14 дней");return;}
+  shareText("Дневник сахара",t);
+};
+
+// ---------- tabs ----------
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v));
+  window.scrollTo(0,0);
+  try{sessionStorage.setItem("gsd-tab",b.dataset.v);}catch(e){}
+});
+
+// ---------- menu ----------
+const todayIdx=dayIdx(new Date());
+let cur=todayIdx;
+function renderDays(){
+  $("days").innerHTML=DAYS.map((d,i)=>`<button type="button" class="${i===cur?"on":""} ${i===todayIdx?"today":""}" data-i="${i}" aria-label="${d.n}">${d.s}</button>`).join("");
+  document.querySelectorAll("#days button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;renderDays();renderDay();});
+}
+function recipeHtml(key){
+  const r=RECIPES[key];if(!r)return"";
+  return `<div class="recipe"><div class="ing">Нужно: ${esc(r.i)}</div><ol>${r.s.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`;
+}
+function renderDay(){
+  const d=DAYS[cur];
+  $("day").innerHTML=`<div class="cook"><b>${d.n}${cur===todayIdx?" · сегодня":""}</b><br>${esc(d.cook)}</div>`+
+    d.m.map(([t,txt,sw,pot,left,rk])=>{
+      const body=`<div class="t">${t}${sw?" 🍰":""}</div><div class="d">${esc(txt)}${pot?'<span class="tag potato">🥔 картофель</span>':""}${left?'<span class="tag left">остаток</span>':""}${rk?'<span class="more">Рецепт ›</span>':""}</div>`;
+      return rk?`<details class="meal ${sw?"sweet":""}"><summary>${body}</summary>${recipeHtml(rk)}</details>`
+               :`<div class="meal norec ${sw?"sweet":""}"><summary style="cursor:default">${body}</summary></div>`;
+    }).join("");
+}
+
+// ---------- shopping ----------
+let hideGot=lsGet("gsd-shop-hide",false), openState=lsGet("gsd-shop-open",{});
+const keyOf=(g,si,ii)=>g.id+"-"+si+"-"+ii;
+function renderShop(){
+  const got=store.got;let n=0,all=0;
+  $("shop").innerHTML=SHOP.map(g=>{
+    let total=0,done=0,body="";
+    g.s.forEach(([sec,items],si)=>{
+      let rows="";
+      items.forEach((t,ii)=>{const k=keyOf(g,si,ii);total++;const on=!!got[k];if(on)done++;
+        if(hideGot&&on)return;
+        rows+=`<label class="item ${on?"got":""}"><input type="checkbox" id="c-${k}" data-k="${k}" ${on?"checked":""}><span>${esc(t)}</span></label>`;});
+      if(rows)body+=`<div class="sec">${sec}</div>`+rows;
+    });
+    n+=done;all+=total;
+    if(!body)body=`<div class="item" style="cursor:default;color:var(--muted)">Всё куплено ✓</div>`;
+    const isOpen=openState[g.id]!==undefined?openState[g.id]:true;
+    return `<details class="group" data-id="${g.id}" ${isOpen?"open":""}><summary><span>${g.t}<br><span class="cnt">${g.d}</span></span><span class="cnt ${done===total?"done":""}">${done}/${total}</span></summary>${body}</details>`;
+  }).join("");
+  $("shop").querySelectorAll("input").forEach(i=>i.onchange=()=>store.setGot(i.dataset.k,i.checked));
+  $("shop").querySelectorAll("details").forEach(d=>d.ontoggle=()=>{openState[d.dataset.id]=d.open;lsSet("gsd-shop-open",openState);});
+  $("ptxt").textContent=`Куплено ${n} из ${all}`;
+  $("pbar").style.width=(all?n/all*100:0)+"%";
+  const hb=$("hideBtn");hb.textContent=hideGot?"Показать купленное":"Скрыть купленное";hb.classList.toggle("soft",hideGot);
+}
+$("hideBtn").onclick=()=>{hideGot=!hideGot;lsSet("gsd-shop-hide",hideGot);renderShop();};
+$("resetBtn").onclick=()=>$("modal").classList.add("on");
+$("mNo").onclick=()=>$("modal").classList.remove("on");
+$("mYes").onclick=()=>{$("modal").classList.remove("on");store.resetShop();toast("Список очищен");};
+
+// ---------- glucose ----------
+let gKind="fast",gMeal=null;
+function localInputValue(d){const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;}
+function guessMeal(h){return h<11?"Завтрак":h<16?"Обед":"Ужин";}
+function dishFor(date,meal){
+  const d=DAYS[dayIdx(date)];
+  const list=d.m.filter(m=>m[0]===meal);
+  if(!list.length)return null;
+  if(meal!=="Перекус")return {txt:list[0][1],pot:!!list[0][3]};
+  const h=date.getHours();const m=h<14?list[0]:list[list.length-1];return {txt:m[1],pot:!!m[3]};
+}
+function updateForm(){
+  document.querySelectorAll("#gKind button").forEach(b=>b.classList.toggle("on",b.dataset.k===gKind));
+  const after=gKind!=="fast";$("gMeal").hidden=!after;
+  if(after&&!gMeal){const t=new Date($("gTime").value||Date.now());gMeal=guessMeal(t.getHours()-(gKind==="h1"?1:2));}
+  document.querySelectorAll("#gMeal button").forEach(b=>b.classList.toggle("on",b.dataset.m===gMeal));
+  const k=KINDS[gKind];$("gHint").textContent=`Цель ${k.n.toLowerCase()}: ниже ${num(k.max)}`;
+  const dish=after&&gMeal?dishFor(new Date($("gTime").value||Date.now()),gMeal):null;
+  $("gDish").hidden=!dish;
+  if(dish)$("gDish").innerHTML=`По меню: <b>${esc(dish.txt)}</b>${dish.pot?' <span class="tag potato">🥔</span>':""}`;
+}
+document.querySelectorAll("#gKind button").forEach(b=>b.onclick=()=>{gKind=b.dataset.k;if(gKind==="fast")gMeal=null;updateForm();});
+document.querySelectorAll("#gMeal button").forEach(b=>b.onclick=()=>{gMeal=b.dataset.m;updateForm();});
+$("gTime").onchange=updateForm;
+$("gForm").onsubmit=async e=>{
+  e.preventDefault();
+  const v=parseFloat(String($("gVal").value).replace(",","."));
+  if(!(v>=1&&v<=30)){toast("Введите значение от 1 до 30");return;}
+  const t=new Date($("gTime").value);if(isNaN(t))return;
+  const r={ts:t.getTime(),kind:gKind,value:Math.round(v*10)/10};
+  if(gKind!=="fast"&&gMeal){r.meal=gMeal;const d=dishFor(t,gMeal);if(d){r.dish=d.txt;r.potato=d.pot;}}
+  if(await store.addReading(r)){
+    $("gVal").value="";$("gTime").value=localInputValue(new Date());
+    const k=KINDS[r.kind];toast(r.value<k.max?"Записано · в норме":"Записано · выше цели");
+  }
+};
+function status(r){const k=KINDS[r.kind];if(!k)return"ok";if(r.value<3.3)return"lo";return r.value<k.max?"ok":"hi";}
+function renderSugar(){
+  const rs=store.readings.slice().sort((a,b)=>b.ts-a.ts);
+  const weekAgo=Date.now()-7*864e5;
+  const wk=rs.filter(r=>r.ts>=weekAgo);
+  const fast=wk.filter(r=>r.kind==="fast");
+  const avgF=fast.length?fast.reduce((s,r)=>s+r.value,0)/fast.length:null;
+  const inT=wk.length?Math.round(wk.filter(r=>status(r)==="ok").length/wk.length*100):null;
+  const potHi=wk.filter(r=>r.potato&&status(r)==="hi").length, pot=wk.filter(r=>r.potato).length;
+  $("stats").innerHTML=
+    `<div class="stat"><div class="k">Натощак, 7 дн.</div><div class="v">${avgF==null?"—":num(avgF)} <small>сред.</small></div></div>`+
+    `<div class="stat"><div class="k">В цели</div><div class="v">${inT==null?"—":inT+"%"} <small>${wk.length} зам.</small></div></div>`+
+    `<div class="stat"><div class="k">После 🥔</div><div class="v">${pot?potHi+" из "+pot:"—"} <small>выше</small></div></div>`;
+  if(!rs.length){$("log").innerHTML=`<div class="empty">Здесь появятся замеры. Запишите первый: натощак утром или через час после еды.</div>`;return;}
+  const fmtD=new Intl.DateTimeFormat("ru-RU",{weekday:"long",day:"numeric",month:"long"});
+  const fmtT=new Intl.DateTimeFormat("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  let html="",last="";
+  rs.slice(0,120).forEach(r=>{
+    const d=new Date(r.ts),dk=d.toDateString();
+    if(dk!==last){html+=`<div class="day-h">${fmtD.format(d)}</div>`;last=dk;}
+    const k=KINDS[r.kind]||{n:""};const st=status(r);
+    const lbl=r.kind==="fast"?k.n:`${k.n} после: ${(r.meal||"еды").toLowerCase()}`;
+    html+=`<div class="rd"><span class="tm">${fmtT.format(d)}</span><div class="tx">${esc(lbl)}${r.potato?" 🥔":""}${r.dish?`<small>${esc(r.dish)}</small>`:""}</div><span class="val ${st}">${num(r.value)}</span><button class="del" type="button" data-id="${esc(r.id)}" aria-label="Удалить замер">×</button></div>`;
+  });
+  $("log").innerHTML=html;
+  $("log").querySelectorAll(".del").forEach(b=>b.onclick=()=>{pendingDel=b.dataset.id;$("dmodal").classList.add("on");});
+}
+// delete confirm
+let pendingDel=null;
+document.body.insertAdjacentHTML("beforeend",`<div class="modal" id="dmodal"><div><p>Удалить этот замер?</p><div class="row"><button class="btn" id="dNo" type="button">Отмена</button><button class="btn soft" id="dYes" type="button">Удалить</button></div></div></div>`);
+$("dNo").onclick=()=>{pendingDel=null;$("dmodal").classList.remove("on");};
+$("dYes").onclick=()=>{$("dmodal").classList.remove("on");if(pendingDel)store.delReading(pendingDel);pendingDel=null;};
+
+// ---------- rules ----------
+$("rules").innerHTML=RULES.map(([b,t])=>`<li><b>${b}</b>${t}</li>`).join("");
+
+// ---------- start ----------
+$("gTime").value=localInputValue(new Date());
+renderDays();renderDay();renderShop();renderSugar();updateForm();
+try{const t=sessionStorage.getItem("gsd-tab");if(t){const b=document.querySelector(`.tabs button[data-v="${t}"]`);if(b)b.click();}}catch(e){}
+</script>
+</body>
+</html>
